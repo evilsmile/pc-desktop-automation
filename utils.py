@@ -5,7 +5,13 @@ from PyQt5.QtCore import QObject, pyqtSignal
 import pyautogui
 
 # 获取程序所在目录的绝对路径
-PROGRAM_DIR = os.path.dirname(os.path.abspath(__file__))
+import sys
+if getattr(sys, 'frozen', False):
+    # 如果是打包后的可执行文件
+    PROGRAM_DIR = os.path.dirname(sys.executable)
+else:
+    # 如果是直接运行的Python脚本
+    PROGRAM_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 配置日志
 logs_dir = os.path.join(PROGRAM_DIR, "logs")

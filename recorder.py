@@ -5,6 +5,9 @@ from pynput import keyboard, mouse
 # 导入工具模块，用于访问全局变量
 import utils
 
+# 常量定义
+MODIFIER_KEYS = ('ctrl', 'shift', 'alt', 'win')  # 修饰键名称列表
+
 # 鼠标事件处理
 # 功能：处理鼠标移动事件
 def on_move(x, y):
@@ -48,10 +51,32 @@ def on_click(x, y, button, pressed):
                 'timestamp': timestamp   # 时间戳
             })
 
+# 辅助函数：获取修饰键名称
+def get_modifier_name(key):
+    """根据键盘按键对象获取修饰键名称
+    
+    Args:
+        key: keyboard.Key对象
+        
+    Returns:
+        str: 修饰键名称，如 'ctrl', 'shift', 'alt', 'win'，如果不是修饰键返回None
+    """
+    if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+        return 'ctrl'
+    elif key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
+        return 'shift'
+    elif key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
+        return 'alt'
+    elif key == keyboard.Key.cmd_l or key == keyboard.Key.cmd_r or (hasattr(keyboard.Key, 'win_l') and (key == keyboard.Key.win_l or key == keyboard.Key.win_r)):
+        return 'win'
+    return None
+
 # 键盘事件处理
 # 功能：处理键盘按下事件
 def on_press(key):
     """处理键盘按下事件"""
+    print(f"key press: {key}")
+
     # 首先检查是否需要停止录制
     # 检查Esc键
     if key == keyboard.Key.esc:
@@ -59,130 +84,130 @@ def on_press(key):
         stop_recording()
         return
     
-    # 检查是否正在录制
-    if utils.is_recording:
-        # 计算相对时间戳
-        timestamp = time.time() - utils.recording_start_time
-        
-        # 处理修饰键（只更新状态，不记录为单独的按键操作）
-        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            # 左Ctrl或右Ctrl键按下
-            utils.modifier_keys['ctrl'] = True
-            return  # 直接返回，不记录为单独操作
-        elif key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
-            # 左Shift或右Shift键按下
-            utils.modifier_keys['shift'] = True
-            return
-        elif key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
-            # 左Alt或右Alt键按下
-            utils.modifier_keys['alt'] = True
-            return
-        elif key == keyboard.Key.cmd_l or key == keyboard.Key.cmd_r:
-            # 左Win或右Win键按下
-            utils.modifier_keys['win'] = True
-            return
-        
-        # 检测当前按下的修饰键
-        modifiers = []
-        if utils.modifier_keys['ctrl']:
-            modifiers.append('ctrl')
-        if utils.modifier_keys['shift']:
-            modifiers.append('shift')
-        if utils.modifier_keys['alt']:
-            modifiers.append('alt')
-        if utils.modifier_keys['win']:
-            modifiers.append('win')
-        
-        # 获取按键字符
-        try:
-            # 尝试获取普通字符键
-            key_char = key.char
-            # 处理控制字符（当有修饰键时）
-            if modifiers and key_char and ord(key_char) < 32:
-                # 如果是控制字符，转换为对应的字母（如 \x17 转换为 'w'）
-                key_char = chr(ord('a') + ord(key_char) - 1)
-        except AttributeError:
-            # 对于特殊键（如方向键、功能键等），使用字符串表示
-            key_char = str(key)
-        
-        # 构建组合键字符串
-        if modifiers:
-            # 如果有修饰键，构建形如 "ctrl+shift+c" 的字符串
-            key_string = '+' .join(modifiers) + '+' + key_char
-        else:
-            # 如果没有修饰键，直接使用键字符
-            key_string = key_char
-        
-        # 记录按键按下操作
+    # 如果未在录制，直接返回
+    if not utils.is_recording:
+        return
+
+    # 计算相对时间戳
+    timestamp = time.time() - utils.recording_start_time
+
+    # 获取修饰键名称
+    modifier_name = get_modifier_name(key)
+    if modifier_name:
+        utils.modifier_keys[modifier_name] = True
+
+    # 通过循环收集当前按下的修饰键
+    modifiers = []
+    for name, pressed in utils.modifier_keys.items():
+        if pressed:
+            modifiers.append(name)
+
+    # 如果是修饰键，记录操作并返回
+    if modifier_name:
+        key_string = '+'.join(modifiers) if len(modifiers) > 1 else modifier_name
         utils.recorded_operations.append({
-            'type': 'keydown',        # 操作类型：按键按下
-            'key': key_string,        # 完整的键字符串（包含修饰键）
-            'modifiers': modifiers,    # 修饰键列表
-            'base_key': key_char,      # 基础键（不包含修饰键）
-            'timestamp': timestamp      # 时间戳
+            'type': 'keydown',
+            'key': key_string,
+            'modifiers': modifiers,
+            'base_key': modifier_name,
+            'timestamp': timestamp
         })
+        return
+
+    # 获取按键字符
+    try:
+        key_char = key.char
+        # 处理控制字符（当有修饰键时）
+        if modifiers and key_char and ord(key_char) < 32:
+            key_char = chr(ord('a') + ord(key_char) - 1)
+    except AttributeError:
+        key_char = str(key)
+
+    # 构建组合键字符串
+    key_string = '+'.join(modifiers) + '+' + key_char if modifiers else key_char
+
+    # 记录按键按下操作
+    utils.recorded_operations.append({
+        'type': 'keydown',
+        'key': key_string,
+        'modifiers': modifiers,
+        'base_key': key_char,
+        'timestamp': timestamp
+    })
 
 
 def on_release(key):
     """处理键盘释放事件"""
-    # 处理修饰键释放
-    if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-        # 左Ctrl或右Ctrl键释放
-        utils.modifier_keys['ctrl'] = False
-        return  # 直接返回，不记录为单独操作
-    elif key == keyboard.Key.shift_l or key == keyboard.Key.shift_r:
-        # 左Shift或右Shift键释放
-        utils.modifier_keys['shift'] = False
-        return
-    elif key == keyboard.Key.alt_l or key == keyboard.Key.alt_r:
-        # 左Alt或右Alt键释放
-        utils.modifier_keys['alt'] = False
-        return
-    elif key == keyboard.Key.cmd_l or key == keyboard.Key.cmd_r:
-        # 左Win或右Win键释放
-        utils.modifier_keys['win'] = False
-        return
+
+    print(f"key release: {key}")
+
+    # 如果未在录制，直接返回
+    if not utils.is_recording:
+        return    
+
+    # 先记录释放前的修饰键状态
+    modifiers_before = [name for name in MODIFIER_KEYS if utils.modifier_keys[name]]
     
-    # 检查是否正在录制
-    if utils.is_recording:
-        # 计算相对时间戳
-        timestamp = time.time() - utils.recording_start_time
-        
-        # 检测当前仍按下的修饰键
-        modifiers = []
-        if utils.modifier_keys['ctrl']:
-            modifiers.append('ctrl')
-        if utils.modifier_keys['shift']:
-            modifiers.append('shift')
-        if utils.modifier_keys['alt']:
-            modifiers.append('alt')
-        if utils.modifier_keys['win']:
-            modifiers.append('win')
-        
-        # 获取按键字符
-        try:
-            # 尝试获取普通字符键
-            key_char = key.char
-        except AttributeError:
-            # 对于特殊键，使用字符串表示
-            key_char = str(key)
-        
-        # 构建组合键字符串
-        if modifiers:
-            # 如果有修饰键，构建形如 "ctrl+shift+c" 的字符串
-            key_string = '+' .join(modifiers) + '+' + key_char
+    # 获取修饰键名称
+    modifier_name = get_modifier_name(key)
+    
+    # 更新修饰键状态
+    if modifier_name:
+        # 修饰键释放
+        utils.modifier_keys[modifier_name] = False  
+
+    # 计算相对时间戳
+    timestamp = time.time() - utils.recording_start_time
+
+    # 检查释放的是否为修饰键
+    if modifier_name:    
+        # 记录修饰键释放操作
+        # 构建键字符串
+        if len(modifiers_before) > 1:
+            # 多个修饰键组合
+            key_string = '+' .join(modifiers_before)
         else:
-            # 如果没有修饰键，直接使用键字符
-            key_string = key_char
+            # 单个修饰键
+            key_string = modifier_name
         
-        # 记录按键释放操作
+        # 记录修饰键释放操作
         utils.recorded_operations.append({
             'type': 'keyup',          # 操作类型：按键释放
-            'key': key_string,        # 完整的键字符串（包含修饰键）
-            'modifiers': modifiers,    # 修饰键列表
-            'base_key': key_char,      # 基础键（不包含修饰键）
+            'key': key_string,        # 完整的键字符串
+            'modifiers': modifiers_before,    # 修饰键列表
+            'base_key': modifier_name,      # 基础键（最后释放的修饰键）
             'timestamp': timestamp      # 时间戳
         })
+        return  # 修饰键处理完成，直接返回，避免后续的普通键处理
+    
+    # 检测当前仍按下的修饰键
+    modifiers = [name for name in MODIFIER_KEYS if utils.modifier_keys[name]]
+    
+    # 获取按键字符
+    try:
+        # 尝试获取普通字符键
+        key_char = key.char
+    except AttributeError:
+        # 对于特殊键，使用字符串表示
+        key_char = str(key)
+    
+    # 构建组合键字符串
+    if modifiers:
+        # 如果有修饰键，构建形如 "ctrl+shift+c" 的字符串
+        key_string = '+' .join(modifiers) + '+' + key_char
+    else:
+        # 如果没有修饰键，直接使用键字符
+        key_string = key_char
+    
+    # 记录按键释放操作
+    utils.recorded_operations.append({
+        'type': 'keyup',          # 操作类型：按键释放
+        'key': key_string,        # 完整的键字符串（包含修饰键）
+        'modifiers': modifiers,    # 修饰键列表
+        'base_key': key_char,      # 基础键（不包含修饰键）
+        'timestamp': timestamp      # 时间戳
+    })
+    
 
 # 录制函数
 # 功能：开始录制操作序列

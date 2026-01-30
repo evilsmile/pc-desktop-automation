@@ -61,20 +61,20 @@ def play_operations():
                     # 如果时间差大于0（有延迟）
                     if delay > 0:
                         # 根据播放速度调整延迟时间
-                        # 播放速度 > 1.0 时，延迟减少（播放加速）
-                        # 播放速度 < 1.0 时，延迟增加（播放减速）
+                        # 播放速度 > 1.0 时，延迟减少（播放加速），播放速度 < 1.0 时，延迟增加（播放减速）
                         adjusted_delay = delay / utils.playback_speed
                         # 执行延迟
                         time.sleep(adjusted_delay)
                         # 打印延迟信息
                         utils.logger.info(f"原始延迟: {delay:.3f}秒, 调整后: {adjusted_delay:.3f}秒, 速度: {utils.playback_speed}倍")
-                
+
+
                 # 执行操作
                 try:
                     # 根据操作类型执行相应的操作
+                    
+                    # 将鼠标移动到指定坐标 (op['x'], op['y'])
                     if op['type'] == 'mousemove':
-                        # 鼠标移动操作
-                        # 将鼠标移动到指定坐标 (op['x'], op['y'])
                         pyautogui.moveTo(op['x'], op['y'])
                     
                     elif op['type'] == 'mousedown':
@@ -96,61 +96,77 @@ def play_operations():
                             pyautogui.mouseUp(x=op['x'], y=op['y'], button='right')
                     
                     elif op['type'] == 'keydown':
-                        # 键盘按键操作
-                        # 检查是否为组合键
-                        if 'modifiers' in op and op['modifiers']:
-                            # 处理组合键
-                            try:
-                                # 打印组合键信息
-                                
-                                # 处理基础键格式：将'Key.tab'转换为'tab'等pyautogui可识别的格式
-                                base_key = op['base_key']
-                                if base_key.startswith('Key.'):
-                                    # 移除'Key.'前缀，提取实际键名
-                                    base_key = base_key[4:]  # 'Key.tab' -> 'tab'
-                                
-                                # 构建热键列表：修饰键 + 处理后的基础键
-                                hotkey_list = op['modifiers'] + [base_key]
-                                utils.logger.info(f"组合键执行 {hotkey_list}")
-                                
-                                # 执行组合键
-                                pyautogui.hotkey(*hotkey_list)
-                                time.sleep(0.1)  # 短延时，确保组合键生效
-                                
-                                # 打印执行成功信息
-                                utils.logger.info(f"组合键执行成功")
-                            except Exception as e:
-                                # 捕获组合键执行异常
-                                utils.logger.error(f"组合键执行失败: {e}")
-                        else:
-                            # 处理非组合键（特殊键或普通键）
-                            # 特殊键映射
-                            # 优化：使用通用的键名转换方法处理特殊键
-                            key = op['key']
-                            if key.startswith('Key.'):
+                        # 键盘按键按下操作
+                        try:
+                            # 处理基础键格式：将'Key.tab'转换为'tab'等pyautogui可识别的格式
+                            base_key = op['base_key']
+                            if base_key.startswith('Key.'):
                                 # 移除'Key.'前缀，提取实际键名
-                                press_key = key[4:]  # 'Key.space' -> 'space'
-                                
-                                # 处理特殊映射：如'page_up' -> 'pageup'
-                                key_mappings = {
-                                    'page_up': 'pageup',
-                                    'page_down': 'pagedown'
-                                }
-                                if press_key in key_mappings:
-                                    press_key = key_mappings[press_key]
-                                
-                                # 执行按键操作
-                                pyautogui.press(press_key)
-                            else:
-                                # 处理普通键
-                                try:
-                                    # 打印普通键信息
-                                    utils.logger.info(f"执行普通键: {op['key']}")
-                                    # 执行按键操作
-                                    pyautogui.press(op['key'])
-                                except Exception as e:
-                                    # 捕获普通键执行异常
-                                    utils.logger.error(f"普通键执行失败: {e}")
+                                base_key = base_key[4:]  # 'Key.tab' -> 'tab'
+                            
+                            # 处理特殊映射：如'page_up' -> 'pageup'
+                            key_mappings = {
+                                'page_up': 'pageup',
+                                'page_down': 'pagedown'
+                            }
+                            if base_key in key_mappings:
+                                base_key = key_mappings[base_key]
+                            
+                            # 按下所有修饰键
+                            for mod in op.get('modifiers', []):
+                                # 将修饰键统一转换为pyautogui可识别的格式
+                                press_mod = mod
+                                if press_mod in ['win', 'cmd']:
+                                    press_mod = 'win'
+                                utils.logger.info(f"按下修饰键: {press_mod}")
+                                pyautogui.keyDown(press_mod)
+                                time.sleep(0.05)  # 短暂延时确保键被按下
+                            
+                            # 按下基础键
+                            utils.logger.info(f"按下基础键: {base_key}")
+                            pyautogui.keyDown(base_key)
+                            time.sleep(0.05)  # 短暂延时确保键被按下
+                            
+                            utils.logger.info(f"按键按下成功: {op['key']}")
+                        except Exception as e:
+                            # 捕获按键执行异常
+                            utils.logger.error(f"按键按下失败: {e}")
+                    elif op['type'] == 'keyup':
+                        # 键盘按键释放操作
+                        try:
+                            # 处理基础键格式：将'Key.tab'转换为'tab'等pyautogui可识别的格式
+                            base_key = op['base_key']
+                            if base_key.startswith('Key.'):
+                                # 移除'Key.'前缀，提取实际键名
+                                base_key = base_key[4:]  # 'Key.tab' -> 'tab'
+                            
+                            # 处理特殊映射：如'page_up' -> 'pageup'
+                            key_mappings = {
+                                'page_up': 'pageup',
+                                'page_down': 'pagedown'
+                            }
+                            if base_key in key_mappings:
+                                base_key = key_mappings[base_key]
+                            
+                            # 释放基础键
+                            utils.logger.info(f"释放基础键: {base_key}")
+                            pyautogui.keyUp(base_key)
+                            time.sleep(0.05)  # 短暂延时确保键被释放
+                            
+                            # 释放所有修饰键（按反向顺序）
+                            for mod in reversed(op.get('modifiers', [])):
+                                # 将修饰键统一转换为pyautogui可识别的格式
+                                press_mod = mod
+                                if press_mod in ['win', 'cmd']:
+                                    press_mod = 'win'
+                                utils.logger.info(f"释放修饰键: {press_mod}")
+                                pyautogui.keyUp(press_mod)
+                                time.sleep(0.05)  # 短暂延时确保键被释放
+                            
+                            utils.logger.info(f"按键释放成功: {op['key']}")
+                        except Exception as e:
+                            # 捕获按键执行异常
+                            utils.logger.error(f"按键释放失败: {e}")
                 except pyautogui.FailSafeException:
                     # 捕获安全机制异常
                     # 当用户将鼠标移动到屏幕角落时，pyautogui 会触发 FailSafeException
@@ -174,10 +190,6 @@ def play_operations():
             # 更新当前函数内的循环计数（用于控制循环条件）
             current_loop += 1
             
-            # 检查是否需要继续循环
-            # 当未开启循环且当前循环次数达到最大循环次数时，跳出循环
-            if not utils.is_looping and current_loop >= utils.max_loop_count:
-                break
     
     finally:
         # 停止键盘监听器

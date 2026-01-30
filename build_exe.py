@@ -24,6 +24,8 @@ def clean_build():
         shutil.rmtree(BUILD_DIR)
     if os.path.exists(os.path.join(PROJECT_ROOT, "main.spec")):
         os.remove(os.path.join(PROJECT_ROOT, "main.spec"))
+    if os.path.exists(os.path.join(PROJECT_ROOT, "PcDesktopAutomation.spec")):
+        os.remove(os.path.join(PROJECT_ROOT, "PcDesktopAutomation.spec"))
     print("清理完成！")
 
 
@@ -99,9 +101,19 @@ def build_exe():
     """构建exe可执行文件"""
     print("开始构建exe可执行文件...")
     
+    # 确保所有的spec文件都被清理干净
+    for spec_file in ["main.spec", "PcDesktopAutomation.spec"]:
+        spec_path = os.path.join(PROJECT_ROOT, spec_file)
+        if os.path.exists(spec_path):
+            print(f"删除旧的spec文件: {spec_path}")
+            os.remove(spec_path)
+    
     # 尝试方法1: 使用Python模块方式
     print("尝试方法1: 使用Python模块方式")
     python_exe = find_python_exe()
+    
+    # 使用绝对路径来指定main.py文件
+    main_py_path = os.path.abspath(os.path.join(PROJECT_ROOT, "main.py"))
     
     build_command = [
         python_exe,
@@ -109,7 +121,8 @@ def build_exe():
         "--name", "PcDesktopAutomation",
         "--onefile",
         "--windowed",
-        "main.py"
+        "--add-data", f"{os.path.join(PROJECT_ROOT, 'styles.css')};.",
+        main_py_path
     ]
     
     print(f"执行命令: {' '.join(build_command)}")
@@ -129,7 +142,8 @@ def build_exe():
         "-m", "pyinstaller",
         "--name", "PcDesktopAutomation",
         "--onefile",
-        "main.py"
+        "--add-data", f"{os.path.join(PROJECT_ROOT, 'styles.css')};.",
+        main_py_path
     ]
     
     print(f"执行命令: {' '.join(build_command_no_windowed)}")
@@ -152,7 +166,8 @@ def build_exe():
             "--name", "PcDesktopAutomation",
             "--onefile",
             "--windowed",
-            "main.py"
+            "--add-data", f"{os.path.join(PROJECT_ROOT, 'styles.css')};.",
+            main_py_path
         ]
         
         print(f"执行命令: {' '.join(build_command_direct)}")
@@ -174,7 +189,8 @@ def build_exe():
             pyinstaller_exe,
             "--name", "PcDesktopAutomation",
             "--onefile",
-            "main.py"
+            "--add-data", f"{os.path.join(PROJECT_ROOT, 'styles.css')};.",
+            main_py_path
         ]
         
         print(f"执行命令: {' '.join(build_command_direct_no_windowed)}")

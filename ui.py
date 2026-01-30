@@ -85,7 +85,16 @@ class MainWindow(QMainWindow):
     def load_stylesheet(self, filename):
         """从文件加载样式表"""
         import os
-        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        import sys
+        
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # 如果是打包后的可执行文件，从临时目录加载
+            base_path = sys._MEIPASS
+        else:
+            # 如果是直接运行的Python脚本，从脚本所在目录加载
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        filepath = os.path.join(base_path, filename)
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return f.read()
@@ -311,6 +320,7 @@ class MainWindow(QMainWindow):
         self.speed_combo.addItem('3.0倍速', 3.0)
         self.speed_combo.addItem('5.0倍速', 5.0)
         self.speed_combo.addItem('10.0倍速', 10.0)
+        self.speed_combo.addItem('15.0倍速', 15.0)
         self.speed_combo.addItem('20.0倍速', 20.0)
         self.speed_combo.setMinimumSize(180, 35)  # 设置最小大小
         self.speed_combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
