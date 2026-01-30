@@ -2,8 +2,22 @@
 import time
 # 导入 pyautogui 模块，用于执行鼠标和键盘操作
 import pyautogui
+# 从 pynput 库导入键盘监听器
+from pynput import keyboard
 # 导入工具模块，用于访问全局变量和信号
 import utils
+
+# 键盘事件处理函数
+# 功能：处理播放时的键盘事件，按esc键停止播放
+def on_play_press(key):
+    """处理播放时的键盘按下事件"""
+    # 检查是否按下了Esc键
+    if key == keyboard.Key.esc:
+        # 按下Esc键，停止播放
+        stop_playback()
+        # 弹出提示框：播放已停止
+        #pyautogui.alert(text='播放已停止', title='提示', button='确定')
+        return
 
 # 播放操作
 # 功能：执行录制的操作序列
@@ -13,6 +27,15 @@ def play_operations():
     utils.is_playing = True
     # 初始化当前循环次数为 0
     current_loop = 0
+    
+    # 启动键盘监听器
+    keyboard_listener = keyboard.Listener(
+        on_press=on_play_press  # 键盘按下事件处理
+    )
+    # 设置为守护线程
+    keyboard_listener.daemon = True
+    # 启动键盘监听器
+    keyboard_listener.start()
     
     # 异常处理块，确保即使出现错误也能正确清理状态
     try:
@@ -135,8 +158,6 @@ def play_operations():
                     utils.logger.warning("检测到安全机制触发")
                     # 设置播放状态为 False，停止播放
                     utils.is_playing = False
-                    # 弹出提示框：播放结束
-                    pyautogui.alert(text='播放已结束', title='提示', button='确定')
                     
                     # 跳出当前循环
                     break
@@ -159,6 +180,12 @@ def play_operations():
                 break
     
     finally:
+        # 停止键盘监听器
+        try:
+            keyboard_listener.stop()
+        except:
+            pass
+        
         utils.logger.info(f"播放结束")
         # 无论播放是否正常完成，都会执行的清理工作
         # 设置播放状态为 False，确保播放已停止

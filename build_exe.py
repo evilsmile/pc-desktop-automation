@@ -45,21 +45,68 @@ def find_python_exe():
     # 尝试使用当前Python解释器
     python_exe = sys.executable
     print(f"使用Python解释器: {python_exe}")
+    
+    # 检查是否是Microsoft Store版本的Python
+    if "WindowsApps" in python_exe and "PythonSoftwareFoundation" in python_exe:
+        print("警告：检测到Microsoft Store版本的Python，可能会遇到模块访问问题")
+        # 尝试查找用户本地安装的Python解释器
+        import os
+        local_python = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Python", "Python39", "python.exe")
+        if os.path.exists(local_python):
+            print(f"找到本地Python解释器: {local_python}")
+            return local_python
+        print("未找到本地Python解释器，将尝试直接使用pyinstaller可执行文件")
+    
     return python_exe
+
+
+def find_pyinstaller():
+    """查找pyinstaller可执行文件"""
+    import os
+    import subprocess
+    
+    # 尝试直接运行pyinstaller
+    try:
+        result = subprocess.run(["pyinstaller", "--version"], capture_output=True, text=True)
+        if result.returncode == 0:
+            print("找到pyinstaller可执行文件")
+            return "pyinstaller"
+    except FileNotFoundError:
+        pass
+    
+    # 尝试从pip安装路径查找
+    pip_path = os.path.join(os.environ.get("LOCALAPPDATA", ""), "packages", "PythonSoftwareFoundation.Python.3.9_qbz5n2kfra8p0", "LocalCache", "local-packages", "Python39", "Scripts", "pyinstaller.exe")
+    if os.path.exists(pip_path):
+        print(f"从pip安装路径找到pyinstaller: {pip_path}")
+        return pip_path
+    
+    # 尝试其他可能的路径
+    possible_paths = [
+        os.path.join(os.environ.get("APPDATA", ""), "Python", "Python39", "Scripts", "pyinstaller.exe"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Python", "Python39", "Scripts", "pyinstaller.exe")
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"找到pyinstaller: {path}")
+            return path
+    
+    print("未找到pyinstaller可执行文件")
+    return None
 
 
 def build_exe():
     """构建exe可执行文件"""
     print("开始构建exe可执行文件...")
     
-    # 获取Python解释器
+    # 尝试方法1: 使用Python模块方式
+    print("尝试方法1: 使用Python模块方式")
     python_exe = find_python_exe()
     
-    # 构建命令
     build_command = [
         python_exe,
         "-m", "pyinstaller",
-        "--name", "WindowsDesktopAutomation",
+        "--name", "PcDesktopAutomation",
         "--onefile",
         "--windowed",
         "main.py"
@@ -67,24 +114,85 @@ def build_exe():
     
     print(f"执行命令: {' '.join(build_command)}")
     
-    # 执行构建命令
     try:
         subprocess.run(build_command, cwd=PROJECT_ROOT, check=True)
+        print("exe可执行文件构建完成！")
+        print(f"可执行文件位于: {os.path.join(OUTPUT_DIR, 'PcDesktopAutomation.exe')}")
+        return
     except subprocess.CalledProcessError as e:
-        print(f"构建失败，尝试使用其他方法...")
-        # 尝试不使用 --windowed 参数
-        build_command_no_windowed = [
-            python_exe,
-            "-m", "pyinstaller",
-            "--name", "WindowsDesktopAutomation",
+        print(f"方法1失败: {e}")
+    
+    # 尝试方法2: 不使用 --windowed 参数
+    print("\n尝试方法2: 不使用 --windowed 参数")
+    build_command_no_windowed = [
+        python_exe,
+        "-m", "pyinstaller",
+        "--name", "PcDesktopAutomation",
+        "--onefile",
+        "main.py"
+    ]
+    
+    print(f"执行命令: {' '.join(build_command_no_windowed)}")
+    
+    try:
+        subprocess.run(build_command_no_windowed, cwd=PROJECT_ROOT, check=True)
+        print("exe可执行文件构建完成！")
+        print(f"可执行文件位于: {os.path.join(OUTPUT_DIR, 'PcDesktopAutomation.exe')}")
+        return
+    except subprocess.CalledProcessError as e:
+        print(f"方法2失败: {e}")
+    
+    # 尝试方法3: 直接使用pyinstaller可执行文件
+    print("\n尝试方法3: 直接使用pyinstaller可执行文件")
+    pyinstaller_exe = find_pyinstaller()
+    
+    if pyinstaller_exe:
+        build_command_direct = [
+            pyinstaller_exe,
+            "--name", "PcDesktopAutomation",
+            "--onefile",
+            "--windowed",
+            "main.py"
+        ]
+        
+        print(f"执行命令: {' '.join(build_command_direct)}")
+        
+        try:
+            subprocess.run(build_command_direct, cwd=PROJECT_ROOT, check=True)
+            print("exe可执行文件构建完成！")
+            print(f"可执行文件位于: {os.path.join(OUTPUT_DIR, 'PcDesktopAutomation.exe')}")
+            return
+        except subprocess.CalledProcessError as e:
+            print(f"方法3失败: {e}")
+    else:
+        print("未找到pyinstaller可执行文件")
+    
+    # 尝试方法4: 直接使用pyinstaller可执行文件（无窗口）
+    print("\n尝试方法4: 直接使用pyinstaller可执行文件（无窗口）")
+    if pyinstaller_exe:
+        build_command_direct_no_windowed = [
+            pyinstaller_exe,
+            "--name", "PcDesktopAutomation",
             "--onefile",
             "main.py"
         ]
-        print(f"执行命令: {' '.join(build_command_no_windowed)}")
-        subprocess.run(build_command_no_windowed, cwd=PROJECT_ROOT, check=True)
+        
+        print(f"执行命令: {' '.join(build_command_direct_no_windowed)}")
+        
+        try:
+            subprocess.run(build_command_direct_no_windowed, cwd=PROJECT_ROOT, check=True)
+            print("exe可执行文件构建完成！")
+            print(f"可执行文件位于: {os.path.join(OUTPUT_DIR, 'PcDesktopAutomation.exe')}")
+            return
+        except subprocess.CalledProcessError as e:
+            print(f"方法4失败: {e}")
     
-    print("exe可执行文件构建完成！")
-    print(f"可执行文件位于: {os.path.join(OUTPUT_DIR, 'WindowsDesktopAutomation.exe')}")
+    print("所有构建方法均失败！")
+    print("\n建议：")
+    print("1. 安装完整版本的Python（非Microsoft Store版本）")
+    print("2. 以管理员身份运行此脚本")
+    print("3. 确保pyinstaller已正确安装: pip install pyinstaller")
+    raise Exception("无法构建exe可执行文件")
 
 
 def create_distribution():
@@ -121,7 +229,7 @@ def main():
     """主函数"""
     try:
         print("=====================================")
-        print("Windows桌面自动化工具 - 打包脚本")
+        print("桌面操作自动重放工具 - 打包脚本")
         print("=====================================")
         
         # 清理构建
@@ -138,7 +246,7 @@ def main():
         
         print("=====================================")
         print("打包完成！")
-        print(f"可执行文件: {os.path.join(OUTPUT_DIR, 'WindowsDesktopAutomation.exe')}")
+        print(f"可执行文件: {os.path.join(OUTPUT_DIR, 'PcDesktopAutomation.exe')}")
         print("=====================================")
         
     except Exception as e:

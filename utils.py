@@ -4,8 +4,11 @@ import logging
 from PyQt5.QtCore import QObject, pyqtSignal
 import pyautogui
 
+# 获取程序所在目录的绝对路径
+PROGRAM_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # 配置日志
-logs_dir = "logs"
+logs_dir = os.path.join(PROGRAM_DIR, "logs")
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
@@ -43,7 +46,7 @@ is_looping = False            # 是否启用循环播放
 loop_count = 0                # 当前循环次数
 current_sequence = ""         # 当前选中的序列名称
 sequences = {}                # 已加载的序列字典，键为序列名，值为操作列表
-sequences_dir = "sequences"   # 存放序列文件的目录名
+sequences_dir = os.path.join(PROGRAM_DIR, "sequences")   # 存放序列文件的目录名
 playback_speed = 1.0          # 默认播放速度（倍率，1.0 为正常速度）
 
 # 修饰键状态跟踪

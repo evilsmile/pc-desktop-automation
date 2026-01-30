@@ -1,0 +1,240 @@
+/* 主窗口样式 */
+QMainWindow {
+    background-color: #f5f5f7; /* 设置主窗口背景颜色为浅色 */
+    color: #1d1d1f;           /* 设置主窗口文本颜色为深色 */
+}
+
+/* 通用部件样式 */
+QWidget {
+    background-color: #f5f5f7; /* 设置所有部件的背景颜色为浅色 */
+    color: #1d1d1f;           /* 设置所有部件的文本颜色为深色 */
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; /* 设置所有部件的字体 */
+}
+
+/* 分组框样式 */
+QGroupBox {
+    background-color: #ffffff; /* 设置分组框背景颜色为白色 */
+    color: #1d1d1f;           /* 设置分组框文本颜色为深色 */
+    border: 2px solid #e0e0e0; /* 设置分组框边框为1像素宽的浅灰色 */
+    border-radius: 12px;        /* 设置分组框边框圆角为12像素 */
+    margin-top: 20px;           /* 设置分组框顶部边距为20像素 */
+    margin-bottom: 10px;        /* 设置分组框底部边距为15像素 */
+    margin-left: 5px;          /* 设置分组框左侧边距为10像素 */
+    margin-right: 5px;         /* 设置分组框右侧边距为10像素 */
+    padding: 10px;              /* 设置分组框内部填充为20像素 */
+}
+
+/* 分组框悬停效果 */
+QGroupBox:hover {
+    border: 1px solid #b31319; /* 分组框悬停时边框变为品牌色 */
+}
+
+/* 分组框标题样式 */
+QGroupBox::title {
+    subcontrol-origin: margin;  /* 设置标题子控件的原点为边距 */
+    left: 15px;                 /* 设置标题左侧位置为15像素 */
+    top: 12px;                 /* 设置标题顶部位置为-10像素 */
+    padding: 0 10px;            /* 设置标题左右内边距为10像素 */
+    background-color: #ffffff;   /* 设置标题背景颜色为白色 */
+    color: #1d1d1f;             /* 设置标题文本颜色为深色 */
+    font-weight: 600;            /* 设置标题字体为半粗体 */
+    font-size: 14px;             /* 设置标题字体大小为14像素 */
+}
+
+/* 按钮样式 */
+QPushButton {
+    background-color: #FF5A5F; /* 设置按钮背景颜色为珊瑚红品牌色 */
+    color: white;              /* 设置按钮文本颜色为白色 */
+    border: none;              /* 设置按钮无边框 */
+    border-radius: 8px;         /* 设置按钮边框圆角为8像素 */
+    padding: 8px 16px;          /* 设置按钮内部填充为上下8像素，左右16像素 */
+    font-weight: 600;            /* 设置按钮字体为半粗体 */
+    font-size: 14px;             /* 设置按钮字体大小为14像素 */
+}
+
+/* 按钮悬停效果 */
+QPushButton:hover {
+    background-color: #FF7A7F; /* 按钮悬停时背景颜色变为亮珊瑚红 */
+}
+
+/* 按钮按下效果 */
+QPushButton:pressed {
+    background-color: #E54A4F; /* 按钮按下时背景颜色变为深珊瑚红 */
+}
+
+/* 禁用按钮样式 */
+QPushButton:disabled {
+    background-color: #e0e0e0; /* 禁用按钮背景颜色变为灰色 */
+    color: #888888;            /* 禁用按钮文本颜色变为灰色 */
+    border: none;              /* 禁用按钮无边框 */
+    opacity: 0.7;               /* 禁用按钮透明度为0.7 */
+}
+
+/* 播放按钮样式 */
+QPushButton#play_btn {
+    background-color: #007AFF; /* 播放按钮背景颜色为蓝色 */
+}
+
+/* 播放按钮悬停效果 */
+QPushButton#play_btn:hover {
+    background-color: #3498FF; /* 播放按钮悬停时背景颜色变为亮蓝色 */
+}
+
+/* 停止按钮样式 */
+QPushButton#stop_record_btn, QPushButton#stop_play_btn {
+    background-color: #FF3B30; /* 停止按钮背景颜色为红色 */
+}
+
+/* 停止按钮悬停效果 */
+QPushButton#stop_record_btn:hover, QPushButton#stop_play_btn:hover {
+    background-color: #FF5252; /* 停止按钮悬停时背景颜色变为亮红色 */
+}
+
+/* 保存按钮样式 */
+QPushButton#save_btn {
+    background-color: #34C759; /* 保存按钮背景颜色为绿色 */
+}
+
+/* 保存按钮悬停效果 */
+QPushButton#save_btn:hover {
+    background-color: #54D779; /* 保存按钮悬停时背景颜色变为亮绿色 */
+}
+
+/* 加载按钮样式 */
+QPushButton#load_btn {
+    background-color: #5856D6; /* 加载按钮背景颜色为紫色 */
+}
+
+/* 加载按钮悬停效果 */
+QPushButton#load_btn:hover {
+    background-color: #7876F6; /* 加载按钮悬停时背景颜色变为亮紫色 */
+}
+
+/* 删除按钮样式 */
+QPushButton#delete_btn {
+    background-color: #FF9500; /* 删除按钮背景颜色为橙色 */
+}
+
+/* 删除按钮悬停效果 */
+QPushButton#delete_btn:hover {
+    background-color: #FFA520; /* 删除按钮悬停时背景颜色变为亮橙色 */
+}
+
+/* 清空按钮样式 */
+QPushButton#clear_btn {
+    background-color: #8E8E93; /* 清空按钮背景颜色为灰色 */
+}
+
+/* 清空按钮悬停效果 */
+QPushButton#clear_btn:hover {
+    background-color: #AEAEB3; /* 清空按钮悬停时背景颜色变为亮灰色 */
+}
+
+/* 标签样式 */
+QLabel {
+    color: #1d1d1f;           /* 设置标签文本颜色为深色 */
+    font-size: 14px;             /* 设置标签字体大小为14像素 */
+}
+
+/* 列表控件样式 */
+QListWidget {
+    background-color: #ffffff; /* 设置列表控件背景颜色为白色 */
+    color: #1d1d1f;           /* 设置列表控件文本颜色为深色 */
+    border: 1px solid #e0e0e0; /* 设置列表控件边框为1像素宽的浅灰色 */
+    border-radius: 8px;         /* 设置列表控件边框圆角为8像素 */
+    padding: 5px;               /* 设置列表控件内部填充为5像素 */
+}
+
+/* 列表项样式 */
+QListWidget::item {
+    padding: 10px;              /* 设置列表项内部填充为10像素 */
+    border-bottom: 1px solid #f0f0f0; /* 设置列表项底部边框为1像素宽的极浅灰色 */
+    border-radius: 6px;          /* 设置列表项边框圆角为6像素 */
+    margin: 2px 0;              /* 设置列表项上下外边距为2像素 */
+}
+
+/* 列表项悬停效果 */
+QListWidget::item:hover {
+    background-color: #f8f8f8; /* 列表项悬停时背景颜色变为极浅灰色 */
+}
+
+/* 列表项选中效果 */
+QListWidget::item:selected {
+    background-color: #FFECEC; /* 列表项选中时背景颜色变为浅珊瑚红 */
+    color: #FF5A5F;           /* 列表项选中时文本颜色变为珊瑚红 */
+}
+
+/* 文本编辑框样式 */
+QTextEdit {
+    background-color: #ffffff; /* 设置文本编辑框背景颜色为白色 */
+    color: #1d1d1f;           /* 设置文本编辑框文本颜色为深色 */
+    border: 1px solid #e0e0e0; /* 设置文本编辑框边框为1像素宽的浅灰色 */
+    border-radius: 8px;         /* 设置文本编辑框边框圆角为8像素 */
+    padding: 10px;              /* 设置文本编辑框内部填充为10像素 */
+    font-size: 14px;             /* 设置文本编辑框字体大小为14像素 */
+}
+
+/* 单行输入框样式 */
+QLineEdit {
+    background-color: #ffffff; /* 设置单行输入框背景颜色为白色 */
+    color: #1d1d1f;           /* 设置单行输入框文本颜色为深色 */
+    border: 1px solid #e0e0e0; /* 设置单行输入框边框为1像素宽的浅灰色 */
+    border-radius: 8px;         /* 设置单行输入框边框圆角为8像素 */
+    padding: 8px 12px;          /* 设置单行输入框内部填充为上下8像素，左右12像素 */
+    font-size: 14px;             /* 设置单行输入框字体大小为14像素 */
+}
+
+/* 输入框聚焦效果 */
+QLineEdit:focus {
+    border-color: #FF5A5F; /* 输入框聚焦时边框颜色变为珊瑚红 */
+}
+
+/* 下拉选择框样式 */
+QComboBox {
+    background-color: #ffffff; /* 设置下拉选择框背景颜色为白色 */
+    color: #1d1d1f;           /* 设置下拉选择框文本颜色为深色 */
+    border: 1px solid #e0e0e0; /* 设置下拉选择框边框为1像素宽的浅灰色 */
+    border-radius: 8px;         /* 设置下拉选择框边框圆角为8像素 */
+    padding: 8px 12px;          /* 设置下拉选择框内部填充为上下8像素，左右12像素 */
+    font-size: 14px;             /* 设置下拉选择框字体大小为14像素 */
+}
+
+/* 下拉选择框聚焦效果 */
+QComboBox:focus {
+    border-color: #FF5A5F; /* 下拉选择框聚焦时边框颜色变为珊瑚红 */
+}
+
+/* 下拉箭头样式 */
+QComboBox::drop-down {
+    border: none;              /* 设置下拉箭头区域无边框 */
+    border-left: 1px solid #e0e0e0; /* 设置下拉箭头区域左侧边框为1像素宽的浅灰色 */
+    border-top-right-radius: 8px;    /* 设置下拉箭头区域右上角圆角为8像素 */
+    border-bottom-right-radius: 8px; /* 设置下拉箭头区域右下角圆角为8像素 */
+}
+
+/* 下拉箭头图标 */
+QComboBox::down-arrow {
+    image: url(:/icons/down_arrow.png); /* 设置下拉箭头图标 */
+    width: 16px;               /* 设置下拉箭头图标宽度为16像素 */
+    height: 16px;              /* 设置下拉箭头图标高度为16像素 */
+}
+
+/* 复选框样式 */
+QCheckBox {
+    color: #1d1d1f;           /* 设置复选框文本颜色为深色 */
+    font-size: 14px;             /* 设置复选框字体大小为14像素 */
+}
+
+/* 复选框选中样式 */
+QCheckBox::indicator:checked {
+    background-color: #FF5A5F; /* 复选框选中时指示器背景颜色为珊瑚红 */
+    border: 2px solid #FF5A5F; /* 复选框选中时指示器边框为2像素宽的珊瑚红 */
+}
+
+/* 状态栏样式 */
+QStatusBar {
+    background-color: #ffffff; /* 设置状态栏背景颜色为白色 */
+    color: #666666;            /* 设置状态栏文本颜色为中灰色 */
+    border-top: 1px solid #e0e0e0; /* 设置状态栏顶部边框为1像素宽的浅灰色 */
+    padding: 8px 16px;          /* 设置状态栏内部填充为上下8像素，左右16像素 */
+}

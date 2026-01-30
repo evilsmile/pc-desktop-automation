@@ -19,24 +19,15 @@ from PyQt5.QtWidgets import (
     QListWidget,       # 列表控件
     QListWidgetItem,   # 列表项
     QGroupBox,         # 分组框
-    QFormLayout,       # 表单布局
     QStatusBar,        # 状态栏
     QMessageBox,       # 消息框
-    QSplitter          # 分隔器
+    QSizePolicy        # 大小策略
 )
 
 # 从 PyQt5 导入核心功能
 from PyQt5.QtCore import (
     Qt,                # Qt 核心常量
-    QTimer,            # 定时器
-    pyqtSignal,        # 信号
-    QObject            # 对象基类
-)
-
-# 从 PyQt5 导入 GUI 功能
-from PyQt5.QtGui import (
-    QIcon,             # 图标
-    QFont              # 字体
+    QTimer             # 定时器
 )
 
 # 导入工具模块
@@ -75,157 +66,49 @@ class MainWindow(QMainWindow):
         
         # 连接录制停止信号，当录制停止时触发 on_recording_stopped 方法
         utils.recording_signals.stopped.connect(self.on_recording_stopped)
+        
+        # 添加窗口淡入效果
+        self.setWindowOpacity(0.0)
+        self.fade_timer = QTimer(self)
+        self.fade_timer.timeout.connect(self.fade_in)
+        self.fade_timer.start(20)
+        self.fade_value = 0.0
+    
+    def fade_in(self):
+        """窗口淡入效果"""
+        self.fade_value += 0.05
+        if self.fade_value >= 1.0:
+            self.fade_value = 1.0
+            self.fade_timer.stop()
+        self.setWindowOpacity(self.fade_value)
+    
+    def load_stylesheet(self, filename):
+        """从文件加载样式表"""
+        import os
+        filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            print(f"加载样式表失败: {e}")
+            return ''
     
     def initUI(self):
         """初始化用户界面"""
         # 设置窗口标题和大小
         # 标题：Windows桌面自动化工具
         # 位置：屏幕左上角(100, 100)像素
-        # 大小：1000x750像素
-        self.setWindowTitle('Windows桌面自动化工具')
-        self.setGeometry(100, 100, 1000, 750)
+        # 大小：700x450像素（固定窗口大小）
+        self.setWindowTitle('桌面操作自动重放工具')
+        self.setGeometry(100, 100, 750, 700)
+        # 设置窗口不可最大化
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)
+        # 设置窗口不可缩放
+        self.setFixedSize(750, 700)
         
-        # 设置深色主题样式
-        # 使用CSS风格的样式表定义界面元素的外观
-        self.setStyleSheet('''
-            /* 主窗口样式 */
-            QMainWindow {
-                background-color: #1e1e1e; /* 深色背景 */
-                color: #d4d4d4;           /* 浅灰色文本 */
-            }
-            
-            /* 通用部件样式 */
-            QWidget {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-            }
-            
-            /* 分组框样式 */
-            QGroupBox {
-                background-color: #252526; /* 稍亮的背景 */
-                color: #d4d4d4;
-                border: 1px solid #3e3e42; /* 边框 */
-                border-radius: 4px;        /* 圆角 */
-                margin-top: 10px;          /* 顶部边距 */
-            }
-            
-            /* 分组框标题样式 */
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                top: 0px;
-                padding: 0 5px 0 5px;
-                background-color: #252526;
-                color: #d4d4d4;
-            }
-            
-            /* 按钮样式 */
-            QPushButton {
-                background-color: #0e639c; /* 蓝色背景 */
-                color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 6px 12px;
-                font-weight: 500;
-            }
-            
-            /* 按钮悬停效果 */
-            QPushButton:hover {
-                background-color: #1177bb; /* 亮蓝色 */
-            }
-            
-            /* 禁用按钮样式 */
-            QPushButton:disabled {
-                background-color: #808080; /* 灰色背景 */
-                color: #ffffff;            /* 白色字体 */
-                border: 1px solid #555;
-                opacity: 0.6;
-            }
-            
-            /* 停止按钮样式 */
-            QPushButton#stop_record_btn, QPushButton#stop_play_btn {
-                background-color: #d13438; /* 红色背景 */
-            }
-            
-            /* 停止按钮悬停效果 */
-            QPushButton#stop_record_btn:hover, QPushButton#stop_play_btn:hover {
-                background-color: #e54b4f; /* 亮红色 */
-            }
-            
-            /* 标签样式 */
-            QLabel {
-                color: #d4d4d4;
-            }
-            
-            /* 列表控件样式 */
-            QListWidget {
-                background-color: #252526;
-                color: #d4d4d4;
-                border: 1px solid #3e3e42;
-                border-radius: 3px;
-            }
-            
-            /* 列表项样式 */
-            QListWidget::item {
-                padding: 5px;
-                border-bottom: 1px solid #3e3e42;
-            }
-            
-            /* 列表项悬停效果 */
-            QListWidget::item:hover {
-                background-color: #2a2d2e;
-            }
-            
-            /* 文本编辑框样式 */
-            QTextEdit {
-                background-color: #252526;
-                color: #d4d4d4;
-                border: 1px solid #3e3e42;
-                border-radius: 3px;
-            }
-            
-            /* 单行输入框样式 */
-            QLineEdit {
-                background-color: #252526;
-                color: #d4d4d4;
-                border: 1px solid #3e3e42;
-                border-radius: 3px;
-                padding: 5px;
-            }
-            
-            /* 下拉选择框样式 */
-            QComboBox {
-                background-color: #252526;
-                color: #d4d4d4;
-                border: 1px solid #3e3e42;
-                border-radius: 3px;
-                padding: 5px;
-            }
-            
-            /* 下拉箭头样式 */
-            QComboBox::drop-down {
-                border-left: 1px solid #3e3e42;
-            }
-            
-            /* 下拉箭头图标 */
-            QComboBox::down-arrow {
-                image: url(:/icons/down_arrow.png);
-                width: 12px;
-                height: 12px;
-            }
-            
-            /* 复选框样式 */
-            QCheckBox {
-                color: #d4d4d4;
-            }
-            
-            /* 状态栏样式 */
-            QStatusBar {
-                background-color: #252526;
-                color: #d4d4d4;
-                border-top: 1px solid #3e3e42;
-            }
-        ''')
+        # 从外部文件加载现代化浅色主题样式
+        stylesheet = self.load_stylesheet('styles.css')
+        self.setStyleSheet(stylesheet)
         
         # 创建中心部件
         # QMainWindow 需要一个中心部件来放置内容
@@ -240,20 +123,51 @@ class MainWindow(QMainWindow):
         # 创建顶部状态栏
         # 显示录制、播放和循环状态
         status_bar = QHBoxLayout()
+        status_bar.setContentsMargins(5, 5, 5, 5)
+        status_bar.setSpacing(20)
         
         # 录制状态标签
         self.recording_status = QLabel('未录制')
+        self.recording_status.setStyleSheet('font-weight: 600; color: #666666;')
         # 播放状态标签
         self.playback_status = QLabel('未播放')
+        self.playback_status.setStyleSheet('font-weight: 600; color: #666666;')
         # 循环状态标签
         self.loop_status = QLabel('未循环')
+        self.loop_status.setStyleSheet('font-weight: 600; color: #666666;')
         
-        # 添加状态标签到状态栏布局
-        status_bar.addWidget(self.recording_status)
-        status_bar.addWidget(QLabel(' | '))  # 分隔符
-        status_bar.addWidget(self.playback_status)
-        status_bar.addWidget(QLabel(' | '))  # 分隔符
-        status_bar.addWidget(self.loop_status)
+        # 创建状态容器
+        recording_container = QWidget()
+        recording_layout = QHBoxLayout(recording_container)  # 改为水平布局
+        recording_layout.setContentsMargins(0, 0, 0, 0)
+        recording_layout.setSpacing(5)  # 设置水平间距
+        recording_title = QLabel('录制状态:')
+        recording_title.setStyleSheet('font-size: 12px; color: #999999;')
+        recording_layout.addWidget(recording_title)
+        recording_layout.addWidget(self.recording_status)
+        
+        playback_container = QWidget()
+        playback_layout = QHBoxLayout(playback_container)  # 改为水平布局
+        playback_layout.setContentsMargins(0, 0, 0, 0)
+        playback_layout.setSpacing(5)  # 设置水平间距
+        playback_title = QLabel('播放状态:')
+        playback_title.setStyleSheet('font-size: 12px; color: #999999;')
+        playback_layout.addWidget(playback_title)
+        playback_layout.addWidget(self.playback_status)
+        
+        loop_container = QWidget()
+        loop_layout = QHBoxLayout(loop_container)  # 改为水平布局
+        loop_layout.setContentsMargins(0, 0, 0, 0)
+        loop_layout.setSpacing(5)  # 设置水平间距
+        loop_title = QLabel('循环状态:')
+        loop_title.setStyleSheet('font-size: 12px; color: #999999;')
+        loop_layout.addWidget(loop_title)
+        loop_layout.addWidget(self.loop_status)
+        
+        # 添加状态容器到状态栏布局
+        status_bar.addWidget(recording_container)
+        status_bar.addWidget(playback_container)
+        status_bar.addWidget(loop_container)
         status_bar.addStretch()  # 弹簧，将内容推到左侧
         
         # 将状态栏添加到主布局
@@ -262,21 +176,30 @@ class MainWindow(QMainWindow):
         # 创建主内容区域
         # 使用水平布局管理器，将界面分为左右两部分
         content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(10, 10, 10, 10)  # 减小边距
+        content_layout.setSpacing(15)  # 减小间距
         
         # 左侧控制面板
         # 包含录制控制、播放控制、系统状态和序列管理
         left_panel = QVBoxLayout()
+        left_panel.setSpacing(10)  # 减小间距
         
         # 录制控制分组
         record_group = QGroupBox('录制控制')
         record_layout = QVBoxLayout()
+        record_layout.setSpacing(10)  # 减小间距
         
         # 录制按钮布局
         record_buttons = QHBoxLayout()
+        record_buttons.setSpacing(10)  # 减小间距
         # 开始录制按钮
         self.start_record_btn = QPushButton('开始录制')
+        self.start_record_btn.setMinimumSize(90, 30)  # 减小按钮大小
+        self.start_record_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
         # 停止录制按钮
         self.stop_record_btn = QPushButton('停止录制')
+        self.stop_record_btn.setMinimumSize(90, 30)  # 减小按钮大小
+        self.stop_record_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
         # 设置按钮对象名，用于样式表选择
         self.stop_record_btn.setObjectName('stop_record_btn')
         # 初始禁用停止按钮
@@ -292,7 +215,9 @@ class MainWindow(QMainWindow):
         
         # 添加按钮布局和提示信息到录制控制布局
         record_layout.addLayout(record_buttons)
-        record_layout.addWidget(QLabel('提示：按esc可停止录制'))
+        hint_label = QLabel('提示：按esc可停止录制')
+        hint_label.setStyleSheet('color: #999999; font-size: 12px;')
+        record_layout.addWidget(hint_label)
         
         # 设置录制控制分组的布局
         record_group.setLayout(record_layout)
@@ -302,13 +227,23 @@ class MainWindow(QMainWindow):
         # 播放控制分组
         play_group = QGroupBox('播放控制')
         play_layout = QVBoxLayout()
+        play_layout.setSpacing(10)  # 减小间距
+        play_layout.setContentsMargins(5, 5, 5, 5)  # 减小边距
         
         # 播放按钮布局
         play_buttons = QHBoxLayout()
+        play_buttons.setSpacing(10)  # 减小间距
+        play_buttons.setContentsMargins(0, 0, 0, 0)
         # 播放按钮
         self.play_btn = QPushButton('播放')
+        self.play_btn.setMinimumSize(90, 30)  # 减小按钮大小
+        self.play_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置播放按钮对象名
+        self.play_btn.setObjectName('play_btn')
         # 停止按钮
         self.stop_play_btn = QPushButton('停止')
+        self.stop_play_btn.setMinimumSize(90, 30)  # 减小按钮大小
+        self.stop_play_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
         # 初始禁用停止按钮
         self.stop_play_btn.setEnabled(False)
         # 设置按钮对象名
@@ -322,12 +257,19 @@ class MainWindow(QMainWindow):
         play_buttons.addWidget(self.play_btn)
         play_buttons.addWidget(self.stop_play_btn)
         
+        # 添加按esc键停止播放的说明
+        play_hint_label = QLabel('提示：按esc键可停止播放')
+        play_hint_label.setStyleSheet('color: #999999; font-size: 12px;')
+        
         # 循环设置布局
         loop_layout = QHBoxLayout()
+        loop_layout.setSpacing(15)
+        loop_layout.setContentsMargins(0, 0, 0, 0)
         # 自动循环复选框
         self.loop_checkbox = QCheckBox('自动循环')
         # 循环次数标签
         self.loop_count_label = QLabel('循环次数：0')
+        self.loop_count_label.setStyleSheet('font-weight: 500;')
         
         # 连接复选框状态变化信号
         self.loop_checkbox.stateChanged.connect(self.on_loop_changed)
@@ -339,11 +281,14 @@ class MainWindow(QMainWindow):
         
         # 循环次数配置布局
         loop_config_layout = QHBoxLayout()
+        loop_config_layout.setSpacing(15)
+        loop_config_layout.setContentsMargins(0, 0, 0, 0)
         # 循环次数输入框
         self.loop_count_input = QLineEdit()
         self.loop_count_input.setPlaceholderText('循环次数')
         self.loop_count_input.setText('1')  # 默认值
-        self.loop_count_input.setFixedWidth(80)  # 固定宽度
+        self.loop_count_input.setMinimumSize(120, 35)  # 设置最小大小
+        self.loop_count_input.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
         
         # 连接输入框文本变化信号
         self.loop_count_input.textChanged.connect(self.on_loop_count_changed)
@@ -355,6 +300,8 @@ class MainWindow(QMainWindow):
         
         # 播放速度配置布局
         speed_layout = QHBoxLayout()
+        speed_layout.setSpacing(15)
+        speed_layout.setContentsMargins(0, 0, 0, 0)
         # 播放速度下拉框
         self.speed_combo = QComboBox()
         # 添加速度选项，第一个参数是显示文本，第二个是对应的数据值
@@ -365,7 +312,8 @@ class MainWindow(QMainWindow):
         self.speed_combo.addItem('5.0倍速', 5.0)
         self.speed_combo.addItem('10.0倍速', 10.0)
         self.speed_combo.addItem('20.0倍速', 20.0)
-        self.speed_combo.setFixedWidth(140)  # 固定宽度
+        self.speed_combo.setMinimumSize(180, 35)  # 设置最小大小
+        self.speed_combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
         
         # 添加到速度布局
         speed_layout.addWidget(QLabel('播放速度：'))
@@ -374,6 +322,7 @@ class MainWindow(QMainWindow):
         
         # 将所有布局添加到播放控制布局
         play_layout.addLayout(play_buttons)
+        play_layout.addWidget(play_hint_label)
         play_layout.addLayout(loop_layout)
         play_layout.addLayout(loop_config_layout)
         play_layout.addLayout(speed_layout)
@@ -384,27 +333,37 @@ class MainWindow(QMainWindow):
         left_panel.addWidget(play_group)
         
         # 系统状态分组
-        system_group = QGroupBox('系统状态')
-        system_layout = QVBoxLayout()
-        # 添加系统状态信息
-        system_layout.addWidget(QLabel('Python 已检测到'))
-        system_layout.addWidget(QLabel('使用PyAutoGUI控制实际Windows桌面'))
-        # 设置系统状态分组的布局
-        system_group.setLayout(system_layout)
-        # 添加到左侧面板
-        left_panel.addWidget(system_group)
+        #system_group = QGroupBox('系统状态')
+        #system_layout = QVBoxLayout()
+        ## 添加系统状态信息
+        #system_layout.addWidget(QLabel('Python 已检测到'))
+        #system_layout.addWidget(QLabel('使用PyAutoGUI控制实际Windows桌面'))
+        ## 设置系统状态分组的布局
+        #system_group.setLayout(system_layout)
+        ## 添加到左侧面板
+        #left_panel.addWidget(system_group)
         
         # 序列管理分组
         sequence_group = QGroupBox('序列管理')
         sequence_layout = QVBoxLayout()
+        sequence_layout.setSpacing(10)  # 减小间距
+        sequence_layout.setContentsMargins(5, 5, 5, 5)  # 减小边距
         
         # 保存序列布局
         save_layout = QHBoxLayout()
+        save_layout.setSpacing(10)  # 减小间距
+        save_layout.setContentsMargins(0, 0, 0, 0)
         # 序列名称输入框
         self.sequence_name = QLineEdit()
         self.sequence_name.setPlaceholderText('输入序列名称')
+        self.sequence_name.setMinimumSize(100, 25)  # 减小输入框大小
+        self.sequence_name.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
         # 保存按钮
         self.save_btn = QPushButton('保存')
+        self.save_btn.setMinimumSize(60, 25)  # 减小按钮大小
+        self.save_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置保存按钮对象名
+        self.save_btn.setObjectName('save_btn')
         
         # 连接保存按钮点击信号
         self.save_btn.clicked.connect(self.on_save_sequence)
@@ -415,11 +374,19 @@ class MainWindow(QMainWindow):
         
         # 加载序列布局
         load_layout = QHBoxLayout()
+        load_layout.setSpacing(10)  # 减小间距
+        load_layout.setContentsMargins(0, 0, 0, 0)
         # 加载序列下拉框
         self.load_combo = QComboBox()
         self.load_combo.addItem('选择序列')
+        self.load_combo.setMinimumSize(100, 25)  # 减小下拉框大小
+        self.load_combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
         # 加载按钮
         self.load_btn = QPushButton('加载')
+        self.load_btn.setMinimumSize(60, 25)  # 减小按钮大小
+        self.load_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置加载按钮对象名
+        self.load_btn.setObjectName('load_btn')
         
         # 连接加载按钮点击信号
         self.load_btn.clicked.connect(self.on_load_sequence)
@@ -430,11 +397,19 @@ class MainWindow(QMainWindow):
         
         # 删除序列布局
         delete_layout = QHBoxLayout()
+        delete_layout.setSpacing(10)  # 减小间距
+        delete_layout.setContentsMargins(0, 0, 0, 0)
         # 删除序列下拉框
         self.delete_combo = QComboBox()
         self.delete_combo.addItem('选择序列')
+        self.delete_combo.setMinimumSize(100, 25)  # 减小下拉框大小
+        self.delete_combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
         # 删除按钮
         self.delete_btn = QPushButton('删除')
+        self.delete_btn.setMinimumSize(60, 25)  # 减小按钮大小
+        self.delete_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置删除按钮对象名
+        self.delete_btn.setObjectName('delete_btn')
         
         # 连接删除按钮点击信号
         self.delete_btn.clicked.connect(self.on_delete_sequence)
@@ -445,6 +420,7 @@ class MainWindow(QMainWindow):
         
         # 当前序列标签
         self.current_sequence_label = QLabel('当前序列：无')
+        self.current_sequence_label.setStyleSheet('font-weight: 600; color: #666666; margin-top: 10px;')
         
         # 将所有布局和标签添加到序列管理布局
         sequence_layout.addLayout(save_layout)
@@ -463,16 +439,33 @@ class MainWindow(QMainWindow):
         # 右侧操作区域
         # 包含操作序列和操作详情
         right_panel = QVBoxLayout()
+        right_panel.setSpacing(8)  # 减小间距
         
         # 操作序列分组
         operations_group = QGroupBox('操作序列')
         operations_layout = QVBoxLayout()
+        operations_layout.setSpacing(10)  # 减小间距
         
         # 操作列表控件
         self.operations_list = QListWidget()
-        self.operations_list.setMinimumHeight(300)  # 设置最小高度
+        self.operations_list.setMinimumHeight(120)  # 减小最小高度
+        self.operations_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 设置大小策略
+        self.operations_list.setStyleSheet('''
+            QListWidget {
+                border-radius: 8px;
+                padding: 5px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-radius: 6px;
+            }
+        ''')
         # 清空操作按钮
         self.clear_btn = QPushButton('清空操作')
+        self.clear_btn.setMinimumSize(100, 30)  # 减小按钮大小
+        self.clear_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置清空按钮对象名
+        self.clear_btn.setObjectName('clear_btn')
         
         # 连接清空按钮点击信号
         self.clear_btn.clicked.connect(self.on_clear_operations)
@@ -489,11 +482,22 @@ class MainWindow(QMainWindow):
         # 操作详情分组
         detail_group = QGroupBox('操作详情')
         detail_layout = QVBoxLayout()
+        detail_layout.setSpacing(8)  # 减小间距
         
         # 操作详情文本框
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)  # 设置为只读
-        self.detail_text.setMinimumHeight(200)  # 设置最小高度
+        self.detail_text.setMinimumHeight(100)  # 减小最小高度
+        self.detail_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 设置大小策略
+        self.detail_text.setStyleSheet('''
+            QTextEdit {
+                border-radius: 8px;
+                padding: 10px;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 11px;
+                line-height: 1.3;
+            }
+        ''')
         
         # 添加到操作详情布局
         detail_layout.addWidget(self.detail_text)
@@ -503,16 +507,15 @@ class MainWindow(QMainWindow):
         right_panel.addWidget(detail_group)
         
         # 将左侧和右侧面板添加到主内容布局
-        # 左侧面板占1份，右侧面板占2份
+        # 调整比例，确保左侧面板有足够的空间显示所有控件
+        # 左侧面板占1份，右侧面板占1份，适应固定窗口大小
         content_layout.addLayout(left_panel, 1)
-        content_layout.addLayout(right_panel, 2)
+        content_layout.addLayout(right_panel, 1)
         
         # 将主内容布局添加到主布局
         main_layout.addLayout(content_layout)
         
-        # 设置窗口最小大小
-        # 确保窗口在调整大小时不会变得太小
-        self.setMinimumSize(800, 600)
+
         
         # 加载序列列表
         # 启动时从文件加载已保存的序列
@@ -524,9 +527,6 @@ class MainWindow(QMainWindow):
     
     def on_start_record(self):
         """开始录制操作"""
-        # 声明全局录制线程变量
-        global recording_thread
-        
         # 更新按钮状态
         self.start_record_btn.setEnabled(False)  # 禁用开始录制按钮
         self.stop_record_btn.setEnabled(True)    # 启用停止录制按钮
@@ -570,9 +570,6 @@ class MainWindow(QMainWindow):
     
     def on_play(self):
         """开始播放操作"""
-        # 声明全局播放线程变量
-        global playback_thread
-        
         # 更新播放设置
         utils.is_looping = self.loop_checkbox.isChecked()  # 设置是否循环播放
         utils.playback_speed = self.speed_combo.currentData()  # 获取播放速度
@@ -846,37 +843,87 @@ class MainWindow(QMainWindow):
     def update_status(self):
         """更新状态信息"""
         # 更新录制状态
-        self.recording_status.setText(f'录制: {"正在录制" if utils.is_recording else "未录制"}')
+        recording_text = f'{"正在录制" if utils.is_recording else "未录制"}'
+        if self.recording_status.text() != recording_text:
+            self.recording_status.setText(recording_text)
+            self.animate_widget(self.recording_status)
+        
         # 更新播放状态
-        self.playback_status.setText(f'播放: {"正在播放" if utils.is_playing else "未播放"}')
+        playback_text = f'{"正在播放" if utils.is_playing else "未播放"}'
+        if self.playback_status.text() != playback_text:
+            self.playback_status.setText(playback_text)
+            self.animate_widget(self.playback_status)
+        
         # 更新循环状态
-        self.loop_status.setText(f'循环: {"开启" if utils.is_looping else "关闭"}')
+        loop_text = f'{"开启" if utils.is_looping else "关闭"}'
+        if self.loop_status.text() != loop_text:
+            self.loop_status.setText(loop_text)
+            self.animate_widget(self.loop_status)
+        
         # 更新循环次数
-        self.loop_count_label.setText(f'循环次数：{utils.loop_count}')
+        loop_count_text = f'循环次数：{utils.loop_count}'
+        if self.loop_count_label.text() != loop_count_text:
+            self.loop_count_label.setText(loop_count_text)
+            self.animate_widget(self.loop_count_label)
+        
         # 更新当前序列信息
-        self.current_sequence_label.setText(f'当前序列：{utils.current_sequence or "无"}')
+        sequence_text = f'当前序列：{utils.current_sequence or "无"}'
+        if self.current_sequence_label.text() != sequence_text:
+            self.current_sequence_label.setText(sequence_text)
+            self.animate_widget(self.current_sequence_label)
         
         # 更新按钮状态
         if utils.is_recording:
-            # 正在录制时
-            self.start_record_btn.setEnabled(False)  # 禁用开始录制按钮
-            self.stop_record_btn.setEnabled(True)    # 启用停止录制按钮
-            self.play_btn.setEnabled(False)          # 禁用播放按钮
+            if self.start_record_btn.isEnabled():
+                self.start_record_btn.setEnabled(False)
+                self.animate_widget(self.start_record_btn)
+            if not self.stop_record_btn.isEnabled():
+                self.stop_record_btn.setEnabled(True)
+                self.animate_widget(self.stop_record_btn)
+            if self.play_btn.isEnabled():
+                self.play_btn.setEnabled(False)
+                self.animate_widget(self.play_btn)
         else:
-            # 未录制时
-            self.start_record_btn.setEnabled(True)   # 启用开始录制按钮
-            self.stop_record_btn.setEnabled(False)   # 禁用停止录制按钮
-            # 只有当不在播放且有操作记录时才启用播放按钮
-            self.play_btn.setEnabled(not utils.is_playing and len(utils.recorded_operations) > 0)
+            if not self.start_record_btn.isEnabled():
+                self.start_record_btn.setEnabled(True)
+                self.animate_widget(self.start_record_btn)
+            if self.stop_record_btn.isEnabled():
+                self.stop_record_btn.setEnabled(False)
+                self.animate_widget(self.stop_record_btn)
+            play_enabled = not utils.is_playing and len(utils.recorded_operations) > 0
+            if self.play_btn.isEnabled() != play_enabled:
+                self.play_btn.setEnabled(play_enabled)
+                self.animate_widget(self.play_btn)
         
         if utils.is_playing:
-            # 正在播放时
-            self.play_btn.setEnabled(False)           # 禁用播放按钮
-            self.stop_play_btn.setEnabled(True)       # 启用停止按钮
-            self.start_record_btn.setEnabled(False)   # 禁用开始录制按钮
+            if self.play_btn.isEnabled():
+                self.play_btn.setEnabled(False)
+                self.animate_widget(self.play_btn)
+            if not self.stop_play_btn.isEnabled():
+                self.stop_play_btn.setEnabled(True)
+                self.animate_widget(self.stop_play_btn)
+            if self.start_record_btn.isEnabled():
+                self.start_record_btn.setEnabled(False)
+                self.animate_widget(self.start_record_btn)
         else:
-            # 未播放时
-            # 只有当有操作记录时才启用播放按钮
-            self.play_btn.setEnabled(len(utils.recorded_operations) > 0)
-            self.stop_play_btn.setEnabled(False)     # 禁用停止按钮
-            self.start_record_btn.setEnabled(True)   # 启用开始录制按钮
+            play_enabled = len(utils.recorded_operations) > 0
+            if self.play_btn.isEnabled() != play_enabled:
+                self.play_btn.setEnabled(play_enabled)
+                self.animate_widget(self.play_btn)
+            if self.stop_play_btn.isEnabled():
+                self.stop_play_btn.setEnabled(False)
+                self.animate_widget(self.stop_play_btn)
+            if not self.start_record_btn.isEnabled() and not utils.is_recording:
+                self.start_record_btn.setEnabled(True)
+                self.animate_widget(self.start_record_btn)
+    
+    def animate_widget(self, widget):
+        """为控件添加动画效果"""
+        original_style = widget.styleSheet()
+        
+        if isinstance(widget, QLabel):
+            widget.setStyleSheet(original_style + '; color: #FF5A5F; font-weight: 700;')
+        elif isinstance(widget, QPushButton):
+            widget.setStyleSheet(original_style + '; background-color: #FF7A7F;')
+        
+        QTimer.singleShot(300, lambda: widget.setStyleSheet(original_style))
