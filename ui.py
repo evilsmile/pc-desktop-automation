@@ -40,7 +40,9 @@ from recorder import start_recording, stop_recording
 from player import play_operations, stop_playback
 
 # 从序列管理模块导入函数
-from sequence import save_sequence, load_sequence, delete_sequence, load_all_sequences
+from sequence import save_sequence, load_sequence, delete_sequence, load_all_sequences, rename_sequence
+# 从录制模块导入修饰键常量
+from recorder import MODIFIER_KEYS
 
 # 主窗口类，继承自 QMainWindow
 class MainWindow(QMainWindow):
@@ -109,11 +111,11 @@ class MainWindow(QMainWindow):
         # 位置：屏幕左上角(100, 100)像素
         # 大小：700x450像素（固定窗口大小）
         self.setWindowTitle('桌面操作自动重放工具')
-        self.setGeometry(100, 100, 750, 700)
+        self.setGeometry(100, 100, 800, 800)
         # 设置窗口不可最大化
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMaximizeButtonHint)
         # 设置窗口不可缩放
-        self.setFixedSize(750, 700)
+        self.setFixedSize(800, 800)
         
         # 从外部文件加载现代化浅色主题样式
         stylesheet = self.load_stylesheet('styles.css')
@@ -428,6 +430,35 @@ class MainWindow(QMainWindow):
         delete_layout.addWidget(self.delete_combo)
         delete_layout.addWidget(self.delete_btn)
         
+        # 修改序列布局
+        rename_layout = QHBoxLayout()
+        rename_layout.setSpacing(10)  # 减小间距
+        rename_layout.setContentsMargins(0, 0, 0, 0)
+        # 修改序列下拉框
+        self.rename_combo = QComboBox()
+        self.rename_combo.addItem('选择序列')
+        self.rename_combo.setMinimumSize(100, 25)  # 减小下拉框大小
+        self.rename_combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
+        # 新名称输入框
+        self.rename_input = QLineEdit()
+        self.rename_input.setPlaceholderText('新名称')
+        self.rename_input.setMinimumSize(100, 25)  # 减小输入框大小
+        self.rename_input.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # 设置大小策略
+        # 修改按钮
+        self.rename_btn = QPushButton('修改')
+        self.rename_btn.setMinimumSize(60, 25)  # 减小按钮大小
+        self.rename_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
+        # 设置修改按钮对象名
+        self.rename_btn.setObjectName('rename_btn')
+        
+        # 连接修改按钮点击信号
+        self.rename_btn.clicked.connect(self.on_rename_sequence)
+        
+        # 添加到修改布局
+        rename_layout.addWidget(self.rename_combo)
+        rename_layout.addWidget(self.rename_input)
+        rename_layout.addWidget(self.rename_btn)
+        
         # 当前序列标签
         self.current_sequence_label = QLabel('当前序列：无')
         self.current_sequence_label.setStyleSheet('font-weight: 600; color: #666666; margin-top: 10px;')
@@ -436,6 +467,7 @@ class MainWindow(QMainWindow):
         sequence_layout.addLayout(save_layout)
         sequence_layout.addLayout(load_layout)
         sequence_layout.addLayout(delete_layout)
+        sequence_layout.addLayout(rename_layout)
         sequence_layout.addWidget(self.current_sequence_label)
         
         # 设置序列管理分组的布局
@@ -460,6 +492,8 @@ class MainWindow(QMainWindow):
         self.operations_list = QListWidget()
         self.operations_list.setMinimumHeight(120)  # 减小最小高度
         self.operations_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 设置大小策略
+        # 设置为多选模式
+        self.operations_list.setSelectionMode(QListWidget.MultiSelection)
         self.operations_list.setStyleSheet('''
             QListWidget {
                 border-radius: 8px;
@@ -469,20 +503,59 @@ class MainWindow(QMainWindow):
                 padding: 8px;
                 border-radius: 6px;
             }
+            QListWidget::item:selected {
+                background-color: #e3f2fd;
+                color: #1976d2;
+            }
         ''')
+        # 操作管理按钮布局
+        operations_buttons = QHBoxLayout()
+        operations_buttons.setSpacing(8)
+        # 添加操作按钮
+        self.add_operation_btn = QPushButton('添加')
+        self.add_operation_btn.setMinimumSize(70, 25)
+        self.add_operation_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.add_operation_btn.setStyleSheet('background-color: #4CAF50; color: white;')
+        # 编辑操作按钮
+        self.edit_operation_btn = QPushButton('编辑')
+        self.edit_operation_btn.setMinimumSize(70, 25)
+        self.edit_operation_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.edit_operation_btn.setStyleSheet('background-color: #2196F3; color: white;')
+        # 复制操作按钮
+        self.copy_operation_btn = QPushButton('复制')
+        self.copy_operation_btn.setMinimumSize(70, 25)
+        self.copy_operation_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.copy_operation_btn.setStyleSheet('background-color: #FF9800; color: white;')
+        # 删除操作按钮
+        self.delete_operation_btn = QPushButton('删除')
+        self.delete_operation_btn.setMinimumSize(70, 25)
+        self.delete_operation_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.delete_operation_btn.setStyleSheet('background-color: #f44336; color: white;')
         # 清空操作按钮
-        self.clear_btn = QPushButton('清空操作')
-        self.clear_btn.setMinimumSize(100, 30)  # 减小按钮大小
-        self.clear_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)  # 设置大小策略
-        # 设置清空按钮对象名
+        self.clear_btn = QPushButton('清空')
+        self.clear_btn.setMinimumSize(70, 25)
+        self.clear_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.clear_btn.setStyleSheet('background-color: #9e9e9e; color: white;')
+        # 设置按钮对象名
         self.clear_btn.setObjectName('clear_btn')
         
-        # 连接清空按钮点击信号
+        # 连接按钮点击信号
         self.clear_btn.clicked.connect(self.on_clear_operations)
+        self.add_operation_btn.clicked.connect(self.on_add_operation)
+        self.edit_operation_btn.clicked.connect(self.on_edit_operation)
+        self.copy_operation_btn.clicked.connect(self.on_copy_operation)
+        self.delete_operation_btn.clicked.connect(self.on_delete_operation)
+        
+        # 添加按钮到布局
+        operations_buttons.addWidget(self.add_operation_btn)
+        operations_buttons.addWidget(self.edit_operation_btn)
+        operations_buttons.addWidget(self.copy_operation_btn)
+        operations_buttons.addWidget(self.delete_operation_btn)
+        operations_buttons.addWidget(self.clear_btn)
         
         # 添加到操作序列布局
         operations_layout.addWidget(self.operations_list)
-        operations_layout.addWidget(self.clear_btn)
+        operations_layout.addLayout(operations_buttons)
         
         # 设置操作序列分组的布局
         operations_group.setLayout(operations_layout)
@@ -620,6 +693,9 @@ class MainWindow(QMainWindow):
         self.showNormal()        # 从最小化状态恢复
         self.activateWindow()    # 激活窗口
 
+        # 重置循环次数
+        utils.loop_count = 0
+
         # 播放完成，弹出提示
         QMessageBox.information(self, '播放完成', '操作序列播放已完成！')
         
@@ -750,7 +826,47 @@ class MainWindow(QMainWindow):
             else:
                 # 删除失败
                 QMessageBox.warning(self, '错误', message)
-    
+
+    def on_rename_sequence(self):
+        """修改序列名称操作"""
+        # 获取选中的旧序列名称
+        old_name = self.rename_combo.currentText()
+        # 获取新序列名称，去除首尾空格
+        new_name = self.rename_input.text().strip()
+        
+        # 验证选择
+        if old_name == '选择序列':
+            # 显示警告消息框
+            QMessageBox.warning(self, '错误', '请选择要修改的序列')
+            return
+        
+        # 验证新名称
+        if not new_name:
+            # 显示警告消息框
+            QMessageBox.warning(self, '错误', '请输入新序列名称')
+            return
+        
+        # 显示确认对话框
+        if QMessageBox.question(self, '确认', f'确定要将序列 "{old_name}" 重命名为 "{new_name}" 吗？', 
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            # 用户确认修改
+            # 调用修改序列函数
+            success, message = rename_sequence(old_name, new_name)
+            
+            # 根据修改结果显示相应消息
+            if success:
+                # 修改成功
+                QMessageBox.information(self, '成功', message)
+                # 清空新名称输入框
+                self.rename_input.clear()
+                # 重新加载序列列表
+                self.load_sequences_list()
+                # 更新当前序列标签
+                self.current_sequence_label.setText(f'当前序列：{utils.current_sequence}')
+            else:
+                # 修改失败
+                QMessageBox.warning(self, '错误', message)
+
     def on_clear_operations(self):
         """清空操作记录"""
         # 显示确认对话框
@@ -784,6 +900,12 @@ class MainWindow(QMainWindow):
         self.delete_combo.addItem('选择序列')
         for seq in sequences:
             self.delete_combo.addItem(seq)
+        
+        # 清空并重新填充修改序列下拉框
+        self.rename_combo.clear()
+        self.rename_combo.addItem('选择序列')
+        for seq in sequences:
+            self.rename_combo.addItem(seq)
     
     def update_operations_list(self):
         """更新操作列表"""
@@ -937,3 +1059,367 @@ class MainWindow(QMainWindow):
             widget.setStyleSheet(original_style + '; background-color: #FF7A7F;')
         
         QTimer.singleShot(300, lambda: widget.setStyleSheet(original_style))
+    
+    def _process_key_operation(self, key_value):
+        """处理按键操作的 modifiers 和 base_key 设置"""
+        operation = {
+            'modifiers': [],
+            'base_key': key_value
+        }
+        
+        # 检查是否为修饰键
+        if key_value.lower() in MODIFIER_KEYS:
+            # 修饰键
+            pass  # 已设置默认值
+        elif key_value.startswith('Key.'):
+            # 特殊按键（如 Key.enter）
+            pass  # 已设置默认值
+        else:
+            # 普通按键
+            pass  # 已设置默认值
+        
+        return operation
+    
+    def on_add_operation(self):
+        """添加操作"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QDialogButtonBox
+        
+        # 创建添加操作对话框
+        dialog = QDialog(self)
+        dialog.setWindowTitle('添加操作')
+        dialog.setMinimumWidth(400)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # 操作类型选择
+        type_layout = QHBoxLayout()
+        type_label = QLabel('操作类型:')
+        self.operation_type_combo = QComboBox()
+        self.operation_type_combo.addItems(['鼠标移动', '鼠标按下', '鼠标释放', '按键按下', '按键释放'])
+        type_layout.addWidget(type_label)
+        type_layout.addWidget(self.operation_type_combo)
+        layout.addLayout(type_layout)
+        
+        # 参数输入区域
+        self.params_layout = QVBoxLayout()
+        layout.addLayout(self.params_layout)
+        
+        # 时间戳输入
+        timestamp_layout = QHBoxLayout()
+        timestamp_label = QLabel('时间戳:')
+        self.timestamp_input = QLineEdit()
+        self.timestamp_input.setPlaceholderText('输入时间戳')
+        timestamp_layout.addWidget(timestamp_label)
+        timestamp_layout.addWidget(self.timestamp_input)
+        layout.addLayout(timestamp_layout)
+        
+        # 动态生成参数输入字段
+        def update_params():
+            # 清空现有布局
+            for i in reversed(range(self.params_layout.count())):
+                item = self.params_layout.itemAt(i)
+                if item.widget():
+                    item.widget().deleteLater()
+                elif item.layout():
+                    # 递归清空子布局
+                    sub_layout = item.layout()
+                    for j in reversed(range(sub_layout.count())):
+                        sub_item = sub_layout.itemAt(j)
+                        if sub_item.widget():
+                            sub_item.widget().deleteLater()
+                    sub_layout.deleteLater()
+            
+            # 重置输入组件引用
+            self.x_input = None
+            self.y_input = None
+            self.button_combo = None
+            self.key_input = None
+            
+            operation_type = self.operation_type_combo.currentText()
+            
+            if operation_type in ['鼠标移动', '鼠标按下', '鼠标释放']:
+                # 鼠标操作参数
+                x_layout = QHBoxLayout()
+                x_label = QLabel('X坐标:')
+                self.x_input = QLineEdit()
+                self.x_input.setPlaceholderText('输入X坐标')
+                x_layout.addWidget(x_label)
+                x_layout.addWidget(self.x_input)
+                self.params_layout.addLayout(x_layout)
+                
+                y_layout = QHBoxLayout()
+                y_label = QLabel('Y坐标:')
+                self.y_input = QLineEdit()
+                self.y_input.setPlaceholderText('输入Y坐标')
+                y_layout.addWidget(y_label)
+                y_layout.addWidget(self.y_input)
+                self.params_layout.addLayout(y_layout)
+                
+                if operation_type in ['鼠标按下', '鼠标释放']:
+                    # 鼠标按钮选择
+                    button_layout = QHBoxLayout()
+                    button_label = QLabel('鼠标按钮:')
+                    self.button_combo = QComboBox()
+                    self.button_combo.addItems(['左键', '右键', '中键'])
+                    button_layout.addWidget(button_label)
+                    button_layout.addWidget(self.button_combo)
+                    self.params_layout.addLayout(button_layout)
+            elif operation_type in ['按键按下', '按键释放']:
+                # 键盘操作参数
+                key_layout = QHBoxLayout()
+                key_label = QLabel('按键:')
+                self.key_input = QLineEdit()
+                self.key_input.setPlaceholderText('输入按键名称')
+                key_layout.addWidget(key_label)
+                key_layout.addWidget(self.key_input)
+                self.params_layout.addLayout(key_layout)
+        
+        # 初始更新参数输入字段
+        update_params()
+        # 连接类型变化信号
+        self.operation_type_combo.currentTextChanged.connect(update_params)
+        
+        # 按钮盒
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        
+        # 显示对话框
+        if dialog.exec_() == QDialog.Accepted:
+            import time
+            
+            # 获取操作类型
+            operation_type = self.operation_type_combo.currentText()
+            
+            # 创建操作对象
+            timestamp = float(self.timestamp_input.text()) if self.timestamp_input.text() else 0
+            operation = {
+                'timestamp': timestamp,
+                'type': ''
+            }
+            
+            # 根据操作类型设置参数
+            if operation_type == '鼠标移动':
+                operation['type'] = 'mousemove'
+                operation['x'] = float(self.x_input.text()) if self.x_input.text() else 0
+                operation['y'] = float(self.y_input.text()) if self.y_input.text() else 0
+            elif operation_type == '鼠标按下':
+                operation['type'] = 'mousedown'
+                operation['x'] = float(self.x_input.text()) if self.x_input.text() else 0
+                operation['y'] = float(self.y_input.text()) if self.y_input.text() else 0
+                button_map = {'左键': 'left', '右键': 'right', '中键': 'middle'}
+                operation['button'] = button_map.get(self.button_combo.currentText(), 'left')
+            elif operation_type == '鼠标释放':
+                operation['type'] = 'mouseup'
+                operation['x'] = float(self.x_input.text()) if self.x_input.text() else 0
+                operation['y'] = float(self.y_input.text()) if self.y_input.text() else 0
+                button_map = {'左键': 'left', '右键': 'right', '中键': 'middle'}
+                operation['button'] = button_map.get(self.button_combo.currentText(), 'left')
+            elif operation_type == '按键按下':
+                operation['type'] = 'keydown'
+                key_value = self.key_input.text()
+                operation['key'] = key_value
+                # 使用辅助函数处理按键参数
+                key_params = self._process_key_operation(key_value)
+                operation.update(key_params)
+            elif operation_type == '按键释放':
+                operation['type'] = 'keyup'
+                key_value = self.key_input.text()
+                operation['key'] = key_value
+                # 使用辅助函数处理按键参数
+                key_params = self._process_key_operation(key_value)
+                operation.update(key_params)
+            
+            # 添加到操作列表
+            utils.recorded_operations.append(operation)
+            
+            # 更新操作列表
+            self.update_operations_list()
+            
+            # 显示成功提示
+            QMessageBox.information(self, '成功', '操作已添加')
+    
+    def on_edit_operation(self):
+        """编辑操作"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QDialogButtonBox
+        
+        # 检查是否有选中的操作
+        selected_items = self.operations_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, '错误', '请先选择要编辑的操作')
+            return
+        
+        selected_item = selected_items[0]
+        operation = selected_item.data(Qt.UserRole)
+        operation_index = self.operations_list.row(selected_item)
+        
+        # 创建编辑操作对话框
+        dialog = QDialog(self)
+        dialog.setWindowTitle('编辑操作')
+        dialog.setMinimumWidth(400)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # 操作类型显示
+        type_layout = QHBoxLayout()
+        type_label = QLabel('操作类型:')
+        type_value = QLabel()
+        type_map = {
+            'mousemove': '鼠标移动',
+            'mousedown': '鼠标按下',
+            'mouseup': '鼠标释放',
+            'keydown': '按键按下',
+            'keyup': '按键释放'
+        }
+        type_value.setText(type_map.get(operation['type'], '未知操作'))
+        type_layout.addWidget(type_label)
+        type_layout.addWidget(type_value)
+        layout.addLayout(type_layout)
+        
+        # 参数输入区域
+        params_layout = QVBoxLayout()
+        layout.addLayout(params_layout)
+        
+        # 时间戳输入
+        timestamp_layout = QHBoxLayout()
+        timestamp_label = QLabel('时间戳:')
+        timestamp_input = QLineEdit()
+        timestamp_input.setText(str(operation.get('timestamp', 0)))
+        timestamp_input.setPlaceholderText('输入时间戳')
+        timestamp_layout.addWidget(timestamp_label)
+        timestamp_layout.addWidget(timestamp_input)
+        params_layout.addLayout(timestamp_layout)
+        
+        # 根据操作类型生成参数输入字段
+        if operation['type'] in ['mousemove', 'mousedown', 'mouseup']:
+            # 鼠标操作参数
+            x_layout = QHBoxLayout()
+            x_label = QLabel('X坐标:')
+            x_input = QLineEdit()
+            x_input.setText(str(operation.get('x', 0)))
+            x_layout.addWidget(x_label)
+            x_layout.addWidget(x_input)
+            params_layout.addLayout(x_layout)
+            
+            y_layout = QHBoxLayout()
+            y_label = QLabel('Y坐标:')
+            y_input = QLineEdit()
+            y_input.setText(str(operation.get('y', 0)))
+            y_layout.addWidget(y_label)
+            y_layout.addWidget(y_input)
+            params_layout.addLayout(y_layout)
+            
+            if operation['type'] in ['mousedown', 'mouseup']:
+                # 鼠标按钮选择
+                button_layout = QHBoxLayout()
+                button_label = QLabel('鼠标按钮:')
+                button_combo = QComboBox()
+                button_combo.addItems(['左键', '右键', '中键'])
+                button_map = {'left': '左键', 'right': '右键', 'middle': '中键'}
+                current_button = button_map.get(operation.get('button', 'left'), '左键')
+                button_combo.setCurrentText(current_button)
+                button_layout.addWidget(button_label)
+                button_layout.addWidget(button_combo)
+                params_layout.addLayout(button_layout)
+        elif operation['type'] in ['keydown', 'keyup']:
+            # 键盘操作参数
+            key_layout = QHBoxLayout()
+            key_label = QLabel('按键:')
+            key_input = QLineEdit()
+            key_input.setText(operation.get('key', ''))
+            key_layout.addWidget(key_label)
+            key_layout.addWidget(key_input)
+            params_layout.addLayout(key_layout)
+        
+        # 按钮盒
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        
+        # 显示对话框
+        if dialog.exec_() == QDialog.Accepted:
+            # 更新时间戳
+            operation['timestamp'] = float(timestamp_input.text()) if timestamp_input.text() else 0
+            
+            # 更新操作参数
+            if operation['type'] in ['mousemove', 'mousedown', 'mouseup']:
+                operation['x'] = float(x_input.text()) if x_input.text() else 0
+                operation['y'] = float(y_input.text()) if y_input.text() else 0
+                if operation['type'] in ['mousedown', 'mouseup']:
+                    button_map_reverse = {'左键': 'left', '右键': 'right', '中键': 'middle'}
+                    operation['button'] = button_map_reverse.get(button_combo.currentText(), 'left')
+            elif operation['type'] in ['keydown', 'keyup']:
+                key_value = key_input.text()
+                operation['key'] = key_value
+                # 使用辅助函数处理按键参数
+                key_params = self._process_key_operation(key_value)
+                operation.update(key_params)
+            
+            # 更新操作列表
+            utils.recorded_operations[operation_index] = operation
+            self.update_operations_list()
+            
+            # 显示成功提示
+            QMessageBox.information(self, '成功', '操作已更新')
+    
+    def on_copy_operation(self):
+        """复制操作"""
+        import copy
+        import time
+        
+        # 检查是否有选中的操作
+        selected_items = self.operations_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, '错误', '请先选择要复制的操作')
+            return
+        
+        # 获取选中操作的索引并排序
+        selected_indices = [self.operations_list.row(item) for item in selected_items]
+        selected_indices.sort()
+        
+        # 复制选中的操作
+        copied_operations = []
+        for index in selected_indices:
+            operation = utils.recorded_operations[index]
+            # 深拷贝操作对象
+            copied_operation = copy.deepcopy(operation)
+            # 更新时间戳
+            copied_operation['timestamp'] = time.time() - utils.start_time if hasattr(utils, 'start_time') else 0
+            copied_operations.append(copied_operation)
+        
+        # 将复制的操作添加到操作列表末尾
+        for operation in copied_operations:
+            utils.recorded_operations.append(operation)
+        
+        # 更新操作列表
+        self.update_operations_list()
+        
+        # 显示成功提示
+        QMessageBox.information(self, '成功', f'已复制 {len(copied_operations)} 个操作')
+    
+    def on_delete_operation(self):
+        """删除操作"""
+        # 检查是否有选中的操作
+        selected_items = self.operations_list.selectedItems()
+        if not selected_items:
+            QMessageBox.warning(self, '错误', '请先选择要删除的操作')
+            return
+        
+        # 获取选中操作的索引并排序（从后往前删除）
+        selected_indices = [self.operations_list.row(item) for item in selected_items]
+        selected_indices.sort(reverse=True)
+        
+        # 显示确认对话框
+        if QMessageBox.question(self, '确认', f'确定要删除选中的 {len(selected_items)} 个操作吗？', 
+                               QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
+            # 从操作列表中移除（从后往前删除避免索引变化）
+            for index in selected_indices:
+                del utils.recorded_operations[index]
+            
+            # 更新操作列表
+            self.update_operations_list()
+            
+            # 显示成功提示
+            QMessageBox.information(self, '成功', f'已删除 {len(selected_items)} 个操作')
